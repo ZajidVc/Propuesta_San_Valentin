@@ -21,7 +21,30 @@
             margin: 0;
             font-family: 'Arial', sans-serif;
             overflow: hidden;
-            touch-action: manipulation;
+        }
+
+        /* Pantalla de inicio para forzar el audio en móviles */
+        #overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--soft-pink);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            transition: opacity 0.5s ease;
+        }
+
+        .overlay-btn {
+            padding: 15px 30px;
+            font-size: 20px;
+            background: var(--primary-pink);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
         .card {
@@ -30,10 +53,10 @@
             border-radius: 20px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.1);
             text-align: center;
-            width: 90%;
+            width: 85%;
             max-width: 500px;
             border: 2px solid #fce4ec;
-            position: relative;
+            display: none; /* Se muestra al dar clic */
         }
 
         .photo-gallery {
@@ -52,18 +75,17 @@
         }
 
         .photo-frame img {
-            width: 85px;
-            height: 85px;
+            width: 80px;
+            height: 80px;
             object-fit: cover;
             display: block;
         }
 
-        h1 { color: var(--dark-pink); font-size: 1.5rem; margin: 15px 0; }
+        h1 { color: var(--dark-pink); font-size: 1.5rem; }
 
         .heart {
             color: #e74c3c;
             font-size: 45px;
-            display: inline-block;
             animation: heartbeat 1.2s infinite;
         }
 
@@ -93,31 +115,33 @@
         #btn-si { background-color: var(--primary-pink); color: white; }
         #btn-no { background-color: #bdc3c7; color: white; position: absolute; }
 
-        #mensaje-exito { display: none; padding: 10px; }
+        #mensaje-exito { display: none; }
         .fade-in { animation: fadeIn 0.8s forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
+
+    <div id="overlay">
+        <div class="heart" style="margin-bottom: 20px;">❤️</div>
+        <button class="overlay-btn" onclick="comenzar()">Abrir regalo ✨</button>
+    </div>
 
     <audio id="miMusica" loop preload="auto">
         <source src="cancion.mp3" type="audio/mpeg">
     </audio>
 
-    <div class="card">
+    <div class="card" id="mainCard">
         <div id="contenido-inicial">
             <div class="photo-gallery">
-                <div class="photo-frame"><img src="Jim1.jpeg" alt="Foto 1"></div>
-                <div class="photo-frame"><img src="jim2.jpeg" alt="Foto 2"></div>
-                <div class="photo-frame"><img src="jim3.jpeg" alt="Foto 3"></div>
-                <div class="photo-frame"><img src="jim4.jpeg" alt="Foto 4"></div>
-                <div class="photo-frame"><img src="jim5.jpeg" alt="Foto 5"></div>
+                <div class="photo-frame"><img src="Jim1.jpeg"></div>
+                <div class="photo-frame"><img src="jim2.jpeg"></div>
+                <div class="photo-frame"><img src="jim3.jpeg"></div>
+                <div class="photo-frame"><img src="jim4.jpeg"></div>
+                <div class="photo-frame"><img src="jim5.jpeg"></div>
             </div>
-
             <div class="heart">❤️</div>
             <h1>¿Quieres ser mi San Valentín?</h1>
-            <p style="font-size: 11px; color: #bbb;">(Toca la pantalla para activar la música 🎵)</p>
-            
             <div class="buttons">
                 <button class="btn" id="btn-si" onclick="aceptar()">¡SÍ!</button>
                 <button class="btn" id="btn-no">No</button>
@@ -136,22 +160,23 @@
 
     <script>
         const musica = document.getElementById('miMusica');
+        const overlay = document.getElementById('overlay');
+        const card = document.getElementById('mainCard');
         const btnNo = document.getElementById('btn-no');
         const btnSi = document.getElementById('btn-si');
-        let musicaIniciada = false;
 
-        function iniciarMusica() {
-            if (!musicaIniciada) {
-                musica.play().then(() => {
-                    musicaIniciada = true;
-                    musica.volume = 1.0;
-                }).catch(e => console.log("Esperando interacción..."));
-            }
+        function comenzar() {
+            // Esta acción de clic del usuario SI permite el audio en iPhone/Android
+            musica.play().then(() => {
+                musica.volume = 1.0;
+            }).catch(e => console.log("Error de audio:", e));
+            
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                card.style.display = 'block';
+            }, 500);
         }
-
-        // Activa música al tocar cualquier parte (solución para móviles)
-        document.body.addEventListener('click', iniciarMusica);
-        document.body.addEventListener('touchstart', iniciarMusica);
 
         function bajarVolumenGradual() {
             const bajada = setInterval(() => {
@@ -164,7 +189,6 @@
         }
 
         const moverBoton = () => {
-            iniciarMusica();
             const x = Math.random() * (window.innerWidth - btnNo.offsetWidth - 30);
             const y = Math.random() * (window.innerHeight - btnNo.offsetHeight - 30);
             btnNo.style.position = 'fixed';
@@ -179,18 +203,11 @@
         btnNo.addEventListener('touchstart', (e) => { e.preventDefault(); moverBoton(); });
 
         function aceptar() {
-            iniciarMusica();
             bajarVolumenGradual();
             document.getElementById('contenido-inicial').style.display = 'none';
             document.getElementById('mensaje-exito').style.display = 'block';
             btnNo.style.display = 'none';
-            
-            confetti({
-                particleCount: 150,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#ff69b4', '#ff1493', '#ffffff']
-            });
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         }
     </script>
 </body>
